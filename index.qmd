@@ -1,0 +1,46 @@
+---
+title: "index"
+author: Yuyan He
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(scales)
+
+# Data source: https://www.meps.ahrq.gov/mepsweb/
+
+data <- read.csv("C:/Users/Whatsername/Desktop/Intro to Data Science/assignment04/MEPS2022.csv")
+
+data <- select(data, AGE22X, TOTEXP22, RACETHX, HWELLSPK, SEX, INSURC22, OBTOTV22, ERTOT22)
+
+data |>
+  group_by(INSURC22) |>
+  summarize(mean_exp = mean(TOTEXP22, na.rm = TRUE)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = factor(INSURC22), y = mean_exp, 
+                         fill = factor(INSURC22)), width = 0.7, alpha = 0.8) +
+             scale_y_continuous(labels = dollar) + 
+             labs(x = "Insurance Status", y = "Mean Expenditure", fill = "Insurance", 
+                  title = "Average Medical Expenditure", 
+                  subtitle = "Exp by Insurance Type", 
+                  caption = "Source: https://www.meps.ahrq.gov/mepsweb/") + 
+             theme_minimal() + 
+  theme(axis.text.x = element_blank())
+
+```
+Interpretation:
+We can see from the visualization that people without insurance have the lowest medical expenditure, even for those who are over 65. Since the expenditure variable we used include both out-of-pocket and insurance covered expenditure, the reason for the low expenditure of the uninsured could be driven by the fact that these people choose not to receive medical services as they couldn't afford. As Medicare should be accessible to those who are over 65, these uninsured people over 65 worth our attention: maybe they lack necessary community support helping them to access Medicare.
+
+
+```{r}
+
+```
+
