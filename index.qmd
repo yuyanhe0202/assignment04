@@ -1,0 +1,108 @@
+---
+title: "index"
+author: Yuyan He
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+# Data source: https://www.meps.ahrq.gov/mepsweb/
+
+# Data viz preparing
+
+library(ggplot2)
+library(tidyverse)
+library(scales)
+
+data <- read.csv("C:/Users/Whatsername/Desktop/Intro to Data Science/assignment04/MEPS2022.csv")
+
+data <- select(data, AGE22X, TOTEXP22, RACETHX, HWELLSPK, SEX, INSURC22, OBTOTV22, ERTOT22)
+```
+
+```{r}
+# 1st visualization
+
+data |>
+  group_by(INSURC22) |>
+  summarize(mean_exp = mean(TOTEXP22, na.rm = TRUE)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = factor(INSURC22), y = mean_exp, 
+                         fill = factor(INSURC22)), width = 0.7, alpha = 0.8) +
+             scale_y_continuous(labels = dollar) + 
+             labs(x = "Insurance Status", y = "Mean Expenditure", fill = "Insurance", 
+                  title = "Average Medical Expenditure", 
+                  subtitle = "Exp by Insurance Type", 
+                  caption = "Source: https://www.meps.ahrq.gov/mepsweb/") + 
+             theme_minimal() + 
+  theme(axis.text.x = element_blank())
+
+```
+
+Interpretation:
+
+We can see from the visualization that people without insurance have the lowest medical expenditure, even for those who are over 65. Since the expenditure variable we used include both out-of-pocket and insurance covered expenditure, the reason for the low expenditure of the uninsured could be driven by the fact that these people choose not to receive medical services as they couldn't afford. As Medicare should be accessible to those who are over 65, these uninsured people over 65 worth our attention: maybe they lack necessary community support helping them to access Medicare.
+
+```{r}
+# 2nd visualization
+
+data |>
+  group_by(AGE22X, SEX) |>
+  summarize(mean_visits = mean(OBTOTV22, na.rm = TRUE), 
+            mean_exp = mean(TOTEXP22, na.rm = TRUE)) |>
+  filter(AGE22X > 0) |>
+  ggplot(aes(x = AGE22X, y = mean_visits, 
+             color = SEX, size = mean_exp)) +
+  geom_point(alpha = 0.7, shape = 16) +
+  labs(x = "Age", y = "Mean Visits", 
+       color = "Sex", 
+       title = "#Medical Service visit by Age & Sex", 
+       subtitle = "Avg. Exp indicated by size of points", 
+       caption = "Source: https://www.meps.ahrq.gov/mepsweb/") + 
+  theme_minimal()
+
+```
+
+Interpretation:
+
+We can observe clearly from the visualization that medical service visit and medical expenditure increase by age, and that female visited medical services much more than male basically across all age. However, through the size of the points which is the average expenditure, male and female does not differ much, especially for those who are over 60. Although further investigation needed, it could be that women are more health conscious, so they visited hospitals more but they avoided severe diseases/large expenditure, while men visit hospitals less but their health problems are more severe. This could be useful for social security/Medicare policy makers; they could launch more gender specific programs, rather than the plain \$170 insurance plan per month for everyone.
+
+```{r}
+# 3rd visualization
+
+data |>
+  mutate(Insured = if_else(condition = INSURC22 %in% c("1 <65 ANY PRIVATE", 
+                                           "2 <65 PUBLIC ONLY", 
+                                           "4 65+ EDITED MEDICARE ONLY", 
+                                           "5 65+ EDITED MEDICARE AND PRIVATE", 
+                                           "6 65+ EDITED MEDICARE AND OTH PUB ONLY"), 
+                           true = 1, 
+                           false = 0)) |>
+  mutate(Age_group = if_else(condition = AGE22X >= 65,
+                             true = "Age >= 65",
+                             false = "Age < 65")) |>
+  group_by(RACETHX, Age_group) |>
+  filter(AGE22X > 0) |>
+  summarize(prop_insured = mean(Insured)) |>
+  ggplot(aes(x = RACETHX, y = prop_insured, fill = RACETHX)) +
+  geom_col() +
+  scale_y_continuous(labels = scales::percent) +
+  facet_grid(~ Age_group) +
+  labs(x = "Race/Ethnicity", 
+       y = "Insurance Coverage", 
+       fill = "Race/Ethnicity",
+       title = "Insurance Coverage by Race & Age Group", 
+       subtitle = "Insurance including both Public and Private", 
+       caption = "Source: https://www.meps.ahrq.gov/mepsweb/") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+
+```
+
+Interpretation:
+
+For age above and under 65, we can see very different insurance coverage status. Asian people has the highest insurance coverage among people who are under 65, and Hispanic people has the lowest - this could be driven by average income and job characteristics. The distribution among people who are 65 and above is interesting: Asian people become the lowest insured, other races do not differ much. At age 65 and above, people generally become eligible for Medicare, which raises coverage across all groups, but the reverse trend for Asian is curious. In my opinion, this could be driven by large portion of foreign-born Asian seniors who might not be eligible for Medicare. While we need further investigation, it should raise alerts for policy makers - is the current Medicare eligibility really appropriate?
