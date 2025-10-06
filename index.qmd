@@ -39,7 +39,7 @@ data |>
              labs(x = "Insurance Status", y = "Mean Expenditure", fill = "Insurance", 
                   title = "Average Medical Expenditure", 
                   subtitle = "Exp by Insurance Type", 
-                  caption = "Source: https://www.meps.ahrq.gov/mepsweb/") + 
+                  caption = "Source: Agency for Healthcare Research and Quality (AHRQ), Medical Expenditure Panel Survey") + 
              theme_minimal() + 
   theme(axis.text.x = element_blank())
 
@@ -64,7 +64,7 @@ data |>
        color = "Sex", 
        title = "#Medical Service visit by Age & Sex", 
        subtitle = "Avg. Exp indicated by size of points", 
-       caption = "Source: https://www.meps.ahrq.gov/mepsweb/") + 
+       caption = "Source: Agency for Healthcare Research and Quality (AHRQ), Medical Expenditure Panel Survey") + 
   theme_minimal()
 
 ```
@@ -99,7 +99,7 @@ data |>
        fill = "Race/Ethnicity",
        title = "Insurance Coverage by Race & Age Group", 
        subtitle = "Insurance including both Public and Private", 
-       caption = "Source: https://www.meps.ahrq.gov/mepsweb/") +
+       caption = "Source: Agency for Healthcare Research and Quality (AHRQ), Medical Expenditure Panel Survey") +
   theme_minimal() +
   theme(axis.text.x = element_blank())
 
