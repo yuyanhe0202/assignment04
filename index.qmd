@@ -23,7 +23,7 @@ data <- read.csv("C:/Users/Whatsername/Desktop/Intro to Data Science/assignment0
 
 #Due to the federal government shutdown, the data's URL is currently inaccessible. So, we set up totally identical folder paths on our respective PCs to allow the code to load the same csv file. (Qingfeng Yu, Oct 5)
 
-data <- select(data, AGE22X, TOTEXP22, RACETHX, HWELLSPK, SEX, INSURC22, OBTOTV22, ERTOT22)
+data <- select(data, AGE22X, TOTEXP22, RACETHX, HWELLSPK, SEX, INSURC22, OBTOTV22, ERTOT22, INDCAT53)
 ```
 
 ```{r}
@@ -108,3 +108,70 @@ data |>
 Interpretation:
 
 For age above and under 65, we can see very different insurance coverage status. Asian people has the highest insurance coverage among people who are under 65, and Hispanic people has the lowest - this could be driven by average income and job characteristics. The distribution among people who are 65 and above is interesting: Asian people become the lowest insured, other races do not differ much. At age 65 and above, people generally become eligible for Medicare, which raises coverage across all groups, but the reverse trend for Asian is curious. In my opinion, this could be driven by large portion of foreign-born Asian seniors who might not be eligible for Medicare. While we need further investigation, it should raise alerts for policy makers - is the current Medicare eligibility really appropriate?
+
+```{r}
+# 4th visualization
+
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+
+visit_expense_by_job <- data |>
+  dplyr::select(AGE22X, INDCAT53, OBTOTV22, TOTEXP22) |>
+  mutate(
+    AGE22X   = ifelse(AGE22X   < 0, NA, AGE22X),
+    INDCAT53 = ifelse(INDCAT53 < 0, NA, INDCAT53),
+    OBTOTV22 = ifelse(OBTOTV22 < 0, NA, OBTOTV22),
+    TOTEXP22 = ifelse(TOTEXP22 < 0, NA, TOTEXP22),
+    age65_lbl = if_else(AGE22X >= 65, "65+", "<65")
+  ) |>
+  filter(!is.na(INDCAT53), !is.na(OBTOTV22), !is.na(TOTEXP22), !is.na(age65_lbl))
+
+plot_data <- visit_expense_by_job |>
+  group_by(age65_lbl, INDCAT53) |>
+  summarise(
+    mean_visits = mean(OBTOTV22, na.rm = TRUE),
+    mean_exp    = mean(TOTEXP22,  na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    indcat53_code  = parse_number(as.character(INDCAT53)),
+    age65_lbl = factor(age65_lbl, levels = c("<65","65+"))
+  )
+
+industry_labels <- c(
+  "1 Natural resources","2 Mining","3 Construction","4 Manufacturing",
+  "5 Wholesale & retail","6 Transportation & utilities","7 Information",
+  "8 Financial activities","9 Prof. & business services",
+  "10 Education/Health/Social","11 Leisure & hospitality",
+  "12 Other services","13 Public administration","14 Military","15 Unclassifiable"
+)
+
+ggplot(plot_data,
+       aes(x = mean_visits, y = mean_exp,
+           color = age65_lbl,
+           shape = factor(indcat53_code, levels = 1:15))) +
+  geom_point(size = 3) +
+  geom_text_repel(aes(label = indcat53_code), size = 3, show.legend = FALSE) +
+  facet_wrap(~ age65_lbl, nrow = 1) +
+  scale_color_manual(values = c("<65"="blue","65+"="red"), name = "Age Group") +
+  scale_shape_manual(
+    values = rep(16, 15),
+    breaks = as.character(1:15),
+    labels = industry_labels,
+    name   = "Industry Code"
+  ) +
+  scale_y_continuous(labels = dollar) +
+  labs(
+    title   = "Doctor Visits vs. Total Expenditure by Industry",
+    x       = "Mean office-based visits (OBTOTV22)",
+    y       = "Mean total medical expenditure (TOTEXP22)",
+    caption = "Source: Agency for Healthcare Research and Quality (AHRQ), Medical Expenditure Panel Survey"
+  ) +
+  theme_minimal()
+
+```
+
+Interpretation:
+
+This visualization aims to explore the change in health condition after retirement by all industries. Number of medical visits and average medical expenditure are two major indicators that can reflect one's health. In manufacturing(4) and information(7) industries, people's health condition do not change drastically after retirement. However, in natural resources(1) and Wholesales/retail(5) industries, people visit doctors more frequently and spend more money on medical services after retirement. The extreme divergence in health status before and after retirement highlights the need to strengthen labor protections and health insurance in certain industries. 
