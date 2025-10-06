@@ -112,8 +112,6 @@ For age above and under 65, we can see very different insurance coverage status.
 ```{r}
 # 4th visualization
 
-library(dplyr)
-library(ggplot2)
 library(ggrepel)
 
 visit_expense_by_job <- data |>
