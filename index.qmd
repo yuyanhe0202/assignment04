@@ -21,6 +21,8 @@ library(scales)
 
 data <- read.csv("C:/Users/Whatsername/Desktop/Intro to Data Science/assignment04/MEPS2022.csv")
 
+#Due to the federal government shutdown, the data's URL is currently inaccessible. So, we set up totally identical folder paths on our respective PCs to allow the code to load the same csv file. (Qingfeng Yu, Oct 5)
+
 data <- select(data, AGE22X, TOTEXP22, RACETHX, HWELLSPK, SEX, INSURC22, OBTOTV22, ERTOT22)
 ```
 
