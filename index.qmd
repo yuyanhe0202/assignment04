@@ -127,8 +127,9 @@ pie_graph <- data |>
   group_by(age65_lbl, INDCAT53) |>
   summarise(exp_sum = sum(TOTEXP22, na.rm = TRUE), .groups = "drop_last") |>
   group_by(age65_lbl) |>
-  mutate(industry_code = parse_number(as.character(INDCAT53))) |>
-  filter(industry_code <= 10) |>    #filter main industries only
+  mutate(industry_code = parse_number(as.character(INDCAT53)),
+         industry_code = ifelse(industry_code == 2, NA, industry_code)) |>
+  filter(!is.na(industry_code),industry_code <= 10) |>    #filter main industries only
   mutate(share = exp_sum / sum(exp_sum))
 
 industry_labels <- c(
@@ -161,4 +162,4 @@ ggplot(aes(x = "", y = share, fill = factor(industry_code))) +
 
 Interpretation:
 
-This visualization aims to explore the change in health condition after retirement by all industries. Total medical expenditure (TOTEXP22) measures one's health condition. Age 65 is when most people start getting retirement benefits, and most people retire after 65. The two pies reveals that people in Natural resources(1), Construction(3), Wholesale/retail(5), and Prof. & business services(9) increase their medical expenditure drastically after 65. This sharp shift suggests that in certain specific industries, people’s health maybe deteriorates more rapidly after retirement. When making Medicare policies, policy makers should consider industrial differences and labor protection.
+This visualization aims to explore the change in health condition after retirement by all industries. Total medical expenditure (TOTEXP22) measures one's health condition. Age 65 is when most people start getting retirement benefits, and most people retire after 65. The two pies reveals that people in Natural resources(1), Construction(3), Wholesale/retail(5), and Prof. & business services(9) increase their medical expenditure drastically after 65. This sharp shift suggests that in certain specific industries, people’s health maybe deteriorates more rapidly after retirement. When making Medicare policies, policy makers should consider industrial differences and labor protection. I dropped mining industry (2), because it was collected by another round of survey.
