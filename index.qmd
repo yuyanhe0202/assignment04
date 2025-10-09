@@ -1,6 +1,6 @@
 ---
 title: "index"
-author: Yuyan He % Qingfeng Yu
+author: Yuyan He & Qingfeng Yu
 format: html
 editor: visual
 editor_options: 
@@ -111,30 +111,21 @@ For age above and under 65, we can see very different insurance coverage status.
 
 ```{r}
 # 4th visualization
-
-library(ggrepel)
-
-visit_expense_by_job <- data |>
-  dplyr::select(AGE22X, INDCAT53, OBTOTV22, TOTEXP22) |>
+pie_graph <- data |>
+  select(AGE22X, INDCAT53, TOTEXP22) |>
   mutate(
     AGE22X   = ifelse(AGE22X   < 0, NA, AGE22X),
     INDCAT53 = ifelse(INDCAT53 < 0, NA, INDCAT53),
-    OBTOTV22 = ifelse(OBTOTV22 < 0, NA, OBTOTV22),
     TOTEXP22 = ifelse(TOTEXP22 < 0, NA, TOTEXP22),
     age65_lbl = if_else(AGE22X >= 65, "65+", "<65")
   ) |>
-  filter(!is.na(INDCAT53), !is.na(OBTOTV22), !is.na(TOTEXP22), !is.na(age65_lbl))
-
-plot_data <- visit_expense_by_job |>
+  filter(!is.na(INDCAT53), !is.na(TOTEXP22), !is.na(age65_lbl)) |>
   group_by(age65_lbl, INDCAT53) |>
-  summarise(
-    mean_visits = mean(OBTOTV22, na.rm = TRUE),
-    mean_exp    = mean(TOTEXP22,  na.rm = TRUE),
-    .groups = "drop"
-  ) |>
+  summarise(exp_sum = sum(TOTEXP22, na.rm = TRUE), .groups = "drop_last") |>
+  group_by(age65_lbl) |>
   mutate(
-    indcat53_code  = parse_number(as.character(INDCAT53)),
-    age65_lbl = factor(age65_lbl, levels = c("<65","65+"))
+    share = exp_sum / sum(exp_sum),
+    industry_code = parse_number(as.character(INDCAT53))
   )
 
 industry_labels <- c(
@@ -145,33 +136,26 @@ industry_labels <- c(
   "12 Other services","13 Public administration","14 Military","15 Unclassifiable"
 )
 
-ggplot(plot_data,
-       aes(x = mean_visits, y = mean_exp,
-           color = age65_lbl,
-           shape = factor(indcat53_code, levels = 1:15))) +
-  geom_point(size = 3) +
-  geom_text_repel(aes(label = indcat53_code), size = 3, show.legend = FALSE) +
+ggplot(pie_graph,
+       aes(x = "", y = share, fill = factor(industry_code, levels = 1:15))) +
+  geom_col(width = 1, color = "grey50") +
+  coord_polar(theta = "y") +
   facet_wrap(~ age65_lbl, nrow = 1) +
-  scale_color_manual(values = c("<65"="blue","65+"="red"), name = "Age Group") +
-  scale_shape_manual(
-    values = rep(16, 15),
+  scale_fill_manual(
+    values = hue_pal()(15),
     breaks = as.character(1:15),
     labels = industry_labels,
     name   = "Industry Code"
   ) +
-  scale_y_continuous(labels = dollar) +
   labs(
-    title   = "Doctor Visits vs. Total Expenditure by Industry",
-    x       = "Mean office-based visits (OBTOTV22)",
-    y       = "Mean total medical expenditure (TOTEXP22)",
+    title   = "Share of Total Medical Expenditure by Industry",
+    subtitle= "Two pies by age group (<65 and 65+); variable: TOTEXP22",
     caption = "Source: Agency for Healthcare Research and Quality (AHRQ), Medical Expenditure Panel Survey"
   ) +
-  theme_minimal()
-
+  theme_void() +
+  theme(legend.position = "right")
 ```
 
 Interpretation:
 
-This visualization aims to explore the change in health condition after retirement by all industries. Number of medical visits and average medical expenditure are two major indicators that can reflect one's health. A single indicator alone cannot completely reflect one's health condition. Therefore, I selected the two variables simultaneously.
-
-In manufacturing(4) and information(7) industries, people's health condition do not change drastically after retirement. However, in natural resources(1) and Wholesales/retail(5) industries, people visit doctors more frequently and spend more money on medical services after retirement. In Prof. & business service (9), people's doctor visits and medical expenditure both increased significantly. The extreme divergence in health status before and after retirement highlights the need to strengthen labor protections and health insurance in certain industries.
+This visualization aims to explore the change in health condition after retirement by all industries. Total medical expenditure (TOTEXP22) measures one's health condition. Age 65 is when most people start getting retirement benefits, and most people retire after 65. The two pies reveals that people in Natural resources(1), Construction(3), Wholesale/retail(5), and Prof. & business services increase their medical expenditure drastically after 65. This sharp shift suggests that in certain specific industries, people’s health maybe deteriorates more rapidly after retirement. When making Medicare policies, policy makers should consider industrial differences and labor protection.
